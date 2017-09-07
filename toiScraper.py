@@ -2,14 +2,17 @@
 
 from bs4 import BeautifulSoup
 from decimal import *
-from pushbullet import Pushbullet 
+from pushbullet import Pushbullet, InvalidKeyError
 
 import urllib
+import os
+import sys
+import configparser
 import pickle
 import re
 
 # user defined vars
-pushbulletAPI = "o.AHKh671q9bc91LVmvRx4olNE7eV3LIgF"
+pushbulletAPI = ""
 langs = ["tamil", "telugu", "malayalam", "hindi"]
 toiLink = "http://timesofindia.indiatimes.com/entertainment/"
 ratingThreshold = 3.5
@@ -55,6 +58,16 @@ def processURL(link):
 			if True == shouldAddMovie:
 				newToiMovies.append(movieObj);
 
+# make current directory the working directory
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
+
+# load parameters from config file
+config = configparser.ConfigParser()
+config.read('config.cfg')
+pushbulletAPI = config['Pushbullet']['api']
+
 # fetch new movies from TOI
 for language in langs:
 	fullLink = toiLink + language + "/movie-reviews/"
@@ -62,7 +75,12 @@ for language in langs:
 
 # compare new movies with old
 oldToiMovies = []
-pb = Pushbullet(pushbulletAPI)
+try:
+	pb = Pushbullet(pushbulletAPI)
+except InvalidKeyError:
+	print "Incorrect pushbullet key. Quitting program."
+	sys.exit()
+
 try:
 	with open('oldToiList.pkl', 'rb') as input:
 		while True:	
