@@ -14,7 +14,7 @@ import re
 # user defined vars
 pushbulletAPI = ""
 langs = ["tamil", "telugu", "malayalam", "hindi"]
-toiLink = "http://timesofindia.indiatimes.com/entertainment/"
+toiLink = "https://timesofindia.indiatimes.com/entertainment/"
 ratingThreshold = 3.5
 
 # global vars
@@ -43,6 +43,7 @@ class ToiMovies(object):
 			return False
 
 def processURL(link):
+	print "Processing URL : " + link;
 	url = urllib.urlopen(link).read()
 	soup = BeautifulSoup(url, "lxml")
 
@@ -57,6 +58,7 @@ def processURL(link):
 			shouldAddMovie = movieObj.computeAbsRating()
 			if True == shouldAddMovie:
 				newToiMovies.append(movieObj);
+				print "Added " + movieObj.movieName + " to database"
 
 # make current directory the working directory
 abspath = os.path.abspath(__file__)
@@ -67,6 +69,7 @@ os.chdir(dname)
 config = configparser.ConfigParser()
 config.read('config.cfg')
 pushbulletAPI = config['Pushbullet']['api']
+print "Loaded pushbullet key from config file"
 
 # fetch new movies from TOI
 for language in langs:
@@ -95,19 +98,19 @@ except IOError:
 	print "File not found. Continuing anyways..."
 
 newMoviesAdded = list(set(newToiMovies) - set(oldToiMovies))
-print "New movies list: " 
-for movie in newToiMovies:
-	print movie.movieName 
-print "Old movies list: " 
-for movie in oldToiMovies:
-	print movie.movieName 
-print "Movies added: " 
+#print "New movies list: " 
+#for movie in newToiMovies:
+	#print movie.movieName 
+#print "Old movies list: " 
+#for movie in oldToiMovies:
+	#print movie.movieName 
+#print "Movies added: " 
 for movie in newMoviesAdded:
-	print movie.movieName 
+	print movie.movieName + " sent to PushBullet"
 	push = pb.push_note("This movie got a good rating on TOI: " + movie.movieName, "Check out this movie: " + movie.movieName + " that got a rating of " + movie.movieRating + "\n Link: " + movie.movieLink)
 
 # append new movies to be added to oldToiMovies
 for movie in newMoviesAdded:
 	with open('oldToiList.pkl', 'ab') as output:
-		print "Dumping movie: " + movie.movieName
+		print "Added " + movie.movieName + " to pickle DB"
 		pickle.dump(movie, output, -1)
