@@ -58,7 +58,7 @@ def processURL(link):
 			shouldAddMovie = movieObj.computeAbsRating()
 			if True == shouldAddMovie:
 				newToiMovies.append(movieObj);
-				print "Added " + movieObj.movieName + " to database"
+				print "This movie " + movieObj.movieName + " matches your filters"
 
 # make current directory the working directory
 abspath = os.path.abspath(__file__)
@@ -89,8 +89,8 @@ try:
 		while True:	
 			try:
 				oldMovie = pickle.load(input)
-				print oldMovie.movieName
-				print oldMovie.movieRating
+				#print oldMovie.movieName
+				#print oldMovie.movieRating
 				oldToiMovies.append(oldMovie)
 			except (EOFError):
 				break
@@ -98,6 +98,8 @@ except IOError:
 	print "File not found. Continuing anyways..."
 
 newMoviesAdded = list(set(newToiMovies) - set(oldToiMovies))
+if len(newMoviesAdded) == 0:
+	print "No new movies to be added to DB. Check back another time"
 #print "New movies list: " 
 #for movie in newToiMovies:
 	#print movie.movieName 
