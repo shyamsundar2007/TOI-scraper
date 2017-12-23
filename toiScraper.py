@@ -13,7 +13,7 @@ import re
 
 # user defined vars
 pushbulletAPI = ""
-langs = ["tamil", "telugu", "malayalam", "hindi"]
+langs = ["hindi"]#["tamil", "telugu", "malayalam", "hindi"]
 toiLink = "https://timesofindia.indiatimes.com/entertainment/"
 ratingThreshold = 3.5
 
@@ -31,6 +31,9 @@ class ToiMovies(object):
 	def __eq__(self, other):
 		return (isinstance(other, self.__class__) and getattr(other, 'movieName') == self.movieName and getattr(other, 'movieRating') == self.movieRating)
 	def addMovie(self, movieName, movieRating, movieLink):
+		# validation
+		if (movieName is None) or (movieRating is None) or (movieLink is None):
+			return
 		self.movieName = movieName.encode('utf-8')
 		self.movieRating = str(movieRating)
 		self.movieLink = toiLink[:-15] + str(movieLink)
@@ -50,11 +53,14 @@ def processURL(link):
 	movies = soup.select("h2 a")
 	critic_ratings = soup.select(".mrB10 > .ratingMovie")
 	movieLink = soup.select(".mr_listing_right > h2 > a")
-	
+
 	if len(movies) == len(critic_ratings):
 		for i in range(0, len(movies)):
 			movieObj = ToiMovies()
 			movieObj.addMovie(movies[i].string, critic_ratings[i].string, movieLink[i]['href'])
+			#validation
+			if movieObj.movieName == "":
+				continue
 			shouldAddMovie = movieObj.computeAbsRating()
 			if True == shouldAddMovie:
 				newToiMovies.append(movieObj);
