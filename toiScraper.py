@@ -13,7 +13,7 @@ import re
 
 # user defined vars
 pushbulletAPI = ""
-langs = ["hindi"]#["tamil", "telugu", "malayalam", "hindi"]
+langs = ["tamil", "telugu", "malayalam", "hindi"]
 toiLink = "https://timesofindia.indiatimes.com/entertainment/"
 ratingThreshold = 3.5
 
