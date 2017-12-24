@@ -5,6 +5,7 @@ from decimal import *
 from pushbullet import Pushbullet, InvalidKeyError
 
 import urllib
+import logging
 import os
 import sys
 import configparser
@@ -46,7 +47,7 @@ class ToiMovies(object):
 			return False
 
 def processURL(link):
-	print "Processing URL : " + link;
+	logging.info("Processing URL : " + link)
 	url = urllib.urlopen(link).read()
 	soup = BeautifulSoup(url, "lxml")
 
@@ -64,18 +65,21 @@ def processURL(link):
 			shouldAddMovie = movieObj.computeAbsRating()
 			if True == shouldAddMovie:
 				newToiMovies.append(movieObj);
-				print "This movie " + movieObj.movieName + " matches your filters"
+				logging.info(movieObj.movieName + " matches your filters")
 
 # make current directory the working directory
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname)
 
+# logging setup
+logging.basicConfig(filename='output.log', level=logging.INFO, format='%(levelname)s - %(asctime)s - %(message)s')
+
 # load parameters from config file
 config = configparser.ConfigParser()
 config.read('config.cfg')
 pushbulletAPI = config['Pushbullet']['api']
-print "Loaded pushbullet key from config file"
+logging.info("Loaded pushbullet key from config file")
 
 # fetch new movies from TOI
 for language in langs:
@@ -87,7 +91,7 @@ oldToiMovies = []
 try:
 	pb = Pushbullet(pushbulletAPI)
 except InvalidKeyError:
-	print "Incorrect pushbullet key. Quitting program."
+	logging.error("Incorrect pushbullet key. Quitting program.")
 	sys.exit()
 
 try:
@@ -95,30 +99,31 @@ try:
 		while True:	
 			try:
 				oldMovie = pickle.load(input)
-				#print oldMovie.movieName
-				#print oldMovie.movieRating
+				logging.debug("Old movie name: " + oldMovie.movieName)
+				logging.debug("Old movie rating: " + oldMovie.movieRating)
 				oldToiMovies.append(oldMovie)
 			except (EOFError):
 				break
 except IOError:
-	print "File not found. Continuing anyways..."
+	logging.warning("File not found. Continuing anyways...")
 
 newMoviesAdded = list(set(newToiMovies) - set(oldToiMovies))
 if len(newMoviesAdded) == 0:
-	print "No new movies to be added to DB. Check back another time"
-#print "New movies list: " 
-#for movie in newToiMovies:
-	#print movie.movieName 
-#print "Old movies list: " 
-#for movie in oldToiMovies:
-	#print movie.movieName 
-#print "Movies added: " 
+	logging.info("No new movies to be added to DB. Check back another time")
+
+logging.debug("New movies list: " )
+for movie in newToiMovies:
+	logging.debug(movie.movieName)
+logging.debug("Old movies list: " )
+for movie in oldToiMovies:
+	logging.debug(movie.movieName)
+
 for movie in newMoviesAdded:
-	print movie.movieName + " sent to PushBullet"
+	logging.info(movie.movieName + " sent to PushBullet")
 	push = pb.push_note("This movie got a good rating on TOI: " + movie.movieName, "Check out this movie: " + movie.movieName + " that got a rating of " + movie.movieRating + "\n Link: " + movie.movieLink)
 
 # append new movies to be added to oldToiMovies
 for movie in newMoviesAdded:
 	with open('oldToiList.pkl', 'ab') as output:
-		print "Added " + movie.movieName + " to pickle DB"
+		logging.info("Added " + movie.movieName + " to pickle DB")
 		pickle.dump(movie, output, -1)
