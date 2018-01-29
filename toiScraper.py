@@ -16,6 +16,7 @@ import re
 pushbulletAPI = ""
 langs = ["tamil", "telugu", "malayalam", "hindi"]
 toiLink = "https://timesofindia.indiatimes.com/entertainment/"
+toiBaseUrl = "https://timesofindia.indiatimes.com"
 ratingThreshold = 3.5
 
 # global vars
@@ -51,21 +52,38 @@ def processURL(link):
 	url = urllib.urlopen(link).read()
 	soup = BeautifulSoup(url, "lxml")
 
-	movies = soup.select("h2 a")
-	critic_ratings = soup.select(".mrB10 > .ratingMovie")
-	movieLink = soup.select(".mr_listing_right > h2 > a")
+	movies = soup.select("#perpetualListingInitial div a div h3")
+	movies.extend(soup.select("#perpetualListing div a div h3"))
+	critic_ratings = [] 
+	movieLink = soup.select("#perpetualListingInitial div a")
+	movieLink.extend(soup.select("#perpetualListing div a"))
 
-	if len(movies) == len(critic_ratings):
-		for i in range(0, len(movies)):
-			movieObj = ToiMovies()
-			movieObj.addMovie(movies[i].string, critic_ratings[i].string, movieLink[i]['href'])
-			#validation
-			if movieObj.movieName == "":
-				continue
-			shouldAddMovie = movieObj.computeAbsRating()
-			if True == shouldAddMovie:
-				newToiMovies.append(movieObj);
-				logging.info(movieObj.movieName + " matches your filters")
+	# Safety check to make sure number of movies and movie links are the same
+	if len(movies) != len(movieLink):
+		log.WARNING("Number of movies and movie linkes mismatch")
+		return
+
+	for i in range(0, len(movies)):
+		# get critic rating for movie
+		ratingUrlString = toiBaseUrl + movieLink[i]['href']
+		ratingUrl = urllib.urlopen(ratingUrlString).read()
+		ratingSoup = BeautifulSoup(ratingUrl, "lxml")
+		critic_ratings.extend(ratingSoup.select(".cricrating"))
+		
+	if len(movies) != len(critic_ratings):
+		log.WARNING("Number of movies and movie rating mimatch")
+		return
+
+	for i in range(0, len(movies)):
+		movieObj = ToiMovies()
+		movieObj.addMovie(movies[i].string, critic_ratings[i].string, movieLink[i]['href'])
+		#validation
+		if movieObj.movieName == "":
+			continue
+		shouldAddMovie = movieObj.computeAbsRating()
+		if True == shouldAddMovie:
+			newToiMovies.append(movieObj);
+			logging.info(movieObj.movieName + " matches your filters")
 
 # make current directory the working directory
 abspath = os.path.abspath(__file__)
@@ -73,7 +91,7 @@ dname = os.path.dirname(abspath)
 os.chdir(dname)
 
 # logging setup
-logging.basicConfig(filename='output.log', level=logging.INFO, format='%(levelname)s - %(asctime)s - %(message)s')
+logging.basicConfig(filename='output.log', level=logging.DEBUG, format='%(levelname)s - %(asctime)s - %(message)s')
 
 # load parameters from config file
 config = configparser.ConfigParser()
