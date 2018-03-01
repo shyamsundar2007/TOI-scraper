@@ -52,15 +52,15 @@ def processURL(link):
 	url = urllib.urlopen(link).read()
 	soup = BeautifulSoup(url, "lxml")
 
-	movies = soup.select("#perpetualListingInitial div a div h3")
-	movies.extend(soup.select("#perpetualListing div a div h3"))
+	movies = soup.select("#perpetualListingInitial div div a h3")
+	movies.extend(soup.select("#perpetualListing div div a h3"))
 	critic_ratings = [] 
-	movieLink = soup.select("#perpetualListingInitial div a")
-	movieLink.extend(soup.select("#perpetualListing div a"))
+	movieLink = soup.select("#perpetualListingInitial div .FIL_left a")
+	movieLink.extend(soup.select("#perpetualListing div .FIL_left a"))
 
 	# Safety check to make sure number of movies and movie links are the same
 	if len(movies) != len(movieLink):
-		log.WARNING("Number of movies and movie linkes mismatch")
+		logging.warning("Number of movies and movie links mismatch")
 		return
 
 	for i in range(0, len(movies)):
@@ -71,7 +71,7 @@ def processURL(link):
 		critic_ratings.extend(ratingSoup.select(".cricrating"))
 		
 	if len(movies) != len(critic_ratings):
-		log.WARNING("Number of movies and movie rating mimatch")
+		logging.warning("Number of movies and movie rating mimatch")
 		return
 
 	for i in range(0, len(movies)):
